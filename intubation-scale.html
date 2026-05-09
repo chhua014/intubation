@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>气管插管评分系统 - 批量暂存与导出</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            max-width: 1280px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f0f4f8;
+            color: #1e2a3a;
+        }
+        h2, h3 {
+            margin-top: 0;
+            color: #0b3b5f;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        .left-panel {
+            flex: 1.2;
+            min-width: 280px;
+        }
+        .right-panel {
+            flex: 1;
+            min-width: 320px;
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            border: 1px solid #dce7f0;
+        }
+        .form-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e2edf7;
+        }
+        .student-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .student-info label {
+            display: flex;
+            flex-direction: column;
+            font-weight: 600;
+            gap: 6px;
+            flex: 1;
+        }
+        input, button {
+            font-size: 14px;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+        }
+        input:focus {
+            outline: none;
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 2px rgba(44,125,160,0.2);
+        }
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .score-table th, .score-table td {
+            border: 1px solid #e2e8f0;
+            padding: 10px 8px;
+            vertical-align: middle;
+        }
+        .score-table th {
+            background-color: #eef2f9;
+            font-weight: 600;
+        }
+        .score-table input {
+            width: 80px;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        .total-score {
+            font-weight: bold;
+            color: #c0392b;
+            background: #fef2f0;
+        }
+        button {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            margin: 6px 6px 0 0;
+            cursor: pointer;
+            font-weight: 500;
+            border-radius: 30px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        button:hover {
+            background: #1f5e7e;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #5c6f87;
+        }
+        .btn-secondary:hover {
+            background: #3e4e64;
+        }
+        .btn-warning {
+            background: #bc6c25;
+        }
+        .btn-warning:hover {
+            background: #9c5518;
+        }
+        .btn-danger {
+            background: #b91c1c;
+        }
+        .btn-danger:hover {
+            background: #991b1b;
+        }
+        .btn-success {
+            background: #2b7a4b;
+        }
+        .storage-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+        .record-count {
+            background: #eef2ff;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: #0c4e6e;
+        }
+        .record-list {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+        .record-item {
+            background: #fafcff;
+            border: 1px solid #dce9f2;
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 12px;
+            transition: 0.1s;
+        }
+        .record-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .record-name {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        .record-id {
+            color: #4b6a8b;
+            font-size: 0.8rem;
+        }
+        .record-total {
+            font-weight: bold;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        .record-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .record-actions button {
+            padding: 4px 10px;
+            font-size: 12px;
+            margin: 0;
+        }
+        .empty-records {
+            color: #6c86a3;
+            text-align: center;
+            padding: 40px 0;
+            font-style: italic;
+        }
+        .badge-edit {
+            background: #ffedd5;
+            color: #9b4a00;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 20px;
+        }
+        hr {
+            margin: 18px 0;
+            border-color: #e2edf7;
+        }
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        footer {
+            font-size: 12px;
+            text-align: center;
+            margin-top: 30px;
+            color: #5c7a99;
+        }
+        @media (max-width: 760px) {
+            .score-table input {
+                width: 65px;
+            }
+            .student-info {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<h2>📋 气管插管评分系统 (批量暂存模式)</h2>
+<div class="container">
+    <!-- 左侧评分表单 -->
+    <div class="left-panel">
+        <div class="form-section">
+            <h3>📝 学生信息 & 评分表</h3>
+            <div class="student-info">
+                <label>👤 姓名：<input type="text" id="studentName" placeholder="例：张敏" autocomplete="off"></label>
+                <label>🆔 学号/工号：<input type="text" id="studentID" placeholder="例：20240001" autocomplete="off"></label>
+            </div>
+            <table class="score-table" id="scoreTable">
+                <thead>
+                <tr><th width="55%">评分点</th><th width="15%">标准分</th><th width="30%">实得分</th></tr>
+                </thead>
+                <tbody id="scoreTableBody">
+                    <!-- 动态由js注入评分项，保证顺序和元数据统一，方便导出 -->
+                </tbody>
+            </table>
+            <div class="action-buttons">
+                <button type="button" id="calculateBtn">🧮 计算总分</button>
+                <button type="button" id="saveRecordBtn" class="btn-success">💾 暂存当前记录</button>
+                <button type="button" id="clearFormBtn" class="btn-secondary">🗑️ 清空表单</button>
+                <button type="button" id="cancelEditBtn" style="display:none;" class="btn-secondary">✖️ 取消编辑</button>
+            </div>
+            <div style="margin-top: 12px; font-size:13px; background:#f1f9fe; padding:8px 12px; border-radius:12px;">
+                ✅ <strong>操作说明</strong>：填写所有评分项 → 点击「暂存当前记录」→ 数据保存在右侧列表中。<br>
+                🔁 可继续录入下一位学生，最后点击「📎 导出全部记录」即可生成单文件Excel (CSV)。
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧暂存区 + 导出 -->
+    <div class="right-panel">
+        <div class="storage-bar">
+            <span><strong>📦 暂存学生记录</strong></span>
+            <span class="record-count" id="recordCount">0 条</span>
+        </div>
+        <div class="action-buttons" style="margin-top:0;">
+            <button id="exportAllBtn" class="btn-success">📎 导出全部记录 (Excel/CSV)</button>
+            <button id="clearAllBtn" class="btn-danger">⚠️ 清空所有暂存</button>
+        </div>
+        <div id="recordsList" class="record-list">
+            <div class="empty-records">暂无暂存数据，请评分后暂存 ➕</div>
+        </div>
+        <div style="margin-top: 16px; font-size:12px; background:#f8fafc; padding:8px; border-radius:12px; border:1px solid #e0edf5;">
+            💡 提示：数据保存在浏览器本地，关闭/刷新页面不会丢失。支持「编辑」修改错评，修改后点击“更新记录”。
+        </div>
+    </div>
+</div>
+<footer>气管插管技能考核 · 批量暂存工具 | 导出文件含每位学生各评分项明细+总分</footer>
+
+<script>
+    // ---------- 1. 定义评分项元数据 (与表格展示一一对应) ----------
+    const scoreItems = [
+        { name: "右手持喉镜下压额头，左手食指、拇指交错开放门齿", max: 3 },
+        { name: "右手持喉镜，镜片从口右侧入，换左手持镜筒", max: 3 },
+        { name: "将舌推至左侧", max: 3 },
+        { name: "向上、向前提镜筒，暴露声门（防止以上门齿为支点撬动）", max: 3 },
+        { name: "右手执导管放入口腔（防止导管套囊接触牙齿）", max: 3 },
+        { name: "插入气管导管，拔出管芯", max: 3 },
+        { name: "确认导管插入深度正确(22-24cm)", max: 3 },
+        { name: "套囊充气", max: 3 },
+        { name: "接呼吸囊，听诊器检查呼吸音，注意导管勿脱出", max: 3 },
+        { name: "插管成功（呼吸囊通气时双肺膨胀、收缩）<br><em>一次成功不扣分；2次成功扣2分；超过3次扣5分</em>", max: 7, short: "插管成功" },
+        { name: "固定前再次确认导管插入深度正确(22-24cm)", max: 3 },
+        { name: "固定导管（牙垫+胶布）", max: 3 },
+        { name: "操作时间把握（<3分钟不扣分；>3分钟扣1分）", max: 2 }
+    ];
+
+    // 动态渲染评分表格 (保证顺序固定)
+    function renderScoreTable() {
+        const tbody = document.getElementById('scoreTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        scoreItems.forEach((item, idx) => {
+            const row = tbody.insertRow();
+            const cellName = row.insertCell(0);
+            const cellMax = row.insertCell(1);
+            const cellScore = row.insertCell(2);
+            // 评分点文本（支持html）
+            cellName.innerHTML = item.name;
+            cellMax.innerHTML = item.max;
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.classList.add('score-input');
+            input.setAttribute('data-index', idx);
+            input.setAttribute('data-max', item.max);
+            input.min = 0;
+            input.max = item.max;
+            input.value = '';
+            input.placeholder = '0~'+item.max;
+            cellScore.appendChild(input);
+        });
+        // 附加一行汇总总分显示（不参与存储内容，只显示）
+        const totalRow = tbody.insertRow();
+        totalRow.style.background = '#fef7e0';
+        const totalCellLabel = totalRow.insertCell(0);
+        totalCellLabel.innerHTML = '<strong>操作部分总得分</strong>';
+        totalCellLabel.style.fontWeight = 'bold';
+        const totalCellStandard = totalRow.insertCell(1);
+        // 计算标准总分：
+        let standardTotal = 0;
+        scoreItems.forEach(i => standardTotal += i.max);
+        totalCellStandard.innerHTML = standardTotal;
+        const totalCellScore = totalRow.insertCell(2);
+        totalCellScore.innerHTML = '<span id="grandTotalSpan" style="font-weight:bold; color:#d32f2f;">0</span>';
+        totalCellScore.style.fontWeight = 'bold';
+    }
+
+    // 收集当前表单所有得分 (数组)
+    function collectScoresFromForm() {
+        const inputs = document.querySelectorAll('#scoreTableBody .score-input');
+        const scores = [];
+        for (let i = 0; i < inputs.length; i++) {
+            let val = parseInt(inputs[i].value);
+            if (isNaN(val)) val = 0;
+            const maxLimit = parseInt(inputs[i].getAttribute('data-max'));
+            if (val > maxLimit) val = maxLimit;
+            if (val < 0) val = 0;
+            scores.push(val);
+        }
+        return scores;
+    }
+
+    // 将分数数组填充回表单
+    function populateScoresToForm(scoresArray) {
+        const inputs = document.querySelectorAll('#scoreTableBody .score-input');
+        for (let i = 0; i < inputs.length && i < scoresArray.length; i++) {
+            let val = scoresArray[i];
+            const maxLimit = parseInt(inputs[i].getAttribute('data-max'));
+            if (val > maxLimit) val = maxLimit;
+            if (val < 0) val = 0;
+            inputs[i].value = val;
+        }
+        updateTotalDisplay();
+    }
+
+    // 更新页面总分显示
+    function updateTotalDisplay() {
+        const scores = collectScoresFromForm();
+        const total = scores.reduce((sum, s) => sum + s, 0);
+        const totalSpan = document.getElementById('grandTotalSpan');
+        if (totalSpan) totalSpan.innerText = total;
+        return total;
+    }
+
+    // 校验表单完整性 (所有评分项必须填写且合法)
+    function validateFormComplete() {
+        const name = document.getElementById('studentName').value.trim();
+        const stuId = document.getElementById('studentID').value.trim();
+        if (!name) { alert("请填写学生姓名"); return false; }
+        if (!stuId) { alert("请填写学号/工号"); return false; }
+        const inputs = document.querySelectorAll('#scoreTableBody .score-input');
+        for (let i = 0; i < inputs.length; i++) {
+            const val = inputs[i].value;
+            if (val === null || val === '' || isNaN(parseInt(val))) {
+                alert(`请填写完整评分项：${scoreItems[i]?.name || '第'+(i+1)+'项'} 分数`);
+                return false;
+            }
+            const num = parseInt(val);
+            const maxVal = parseInt(inputs[i].getAttribute('data-max'));
+            if (num < 0 || num > maxVal) {
+                alert(`评分项“${scoreItems[i]?.name}” 分数必须在0~${maxVal}之间`);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // ---------- 暂存区 localStorage 管理 ----------
+    const STORAGE_KEY = "tracheal_intubation_records_v2";
+    let currentEditId = null;   // 正在编辑的记录id (uuid)
+
+    // 获取所有暂存记录
+    function getAllRecords() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        try {
+            return JSON.parse(raw);
+        } catch(e) { return []; }
+    }
+
+    // 保存记录数组
+    function saveRecordsToStorage(records) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        renderRecordsList();
+        updateRecordCount();
+    }
+
+    // 添加新记录 或 更新现有记录
+    function upsertRecord(recordData) {
+        let records = getAllRecords();
+        if (currentEditId) {
+            // 编辑模式：替换原有id的记录
+            const index = records.findIndex(r => r.id === currentEditId);
+            if (index !== -1) {
+                records[index] = { ...recordData, id: currentEditId, updatedAt: Date.now() };
+                saveRecordsToStorage(records);
+                currentEditId = null;
+                // 切换按钮状态回普通模式
+                toggleEditMode(false);
+                alert("✅ 记录已更新！");
+                return true;
+            } else {
+                // 异常情况退化为新增
+                currentEditId = null;
+                toggleEditMode(false);
+            }
+        }
+        // 新增记录
+        const newRecord = {
+            ...recordData,
+            id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+            createdAt: Date.now()
+        };
+        records.push(newRecord);
+        saveRecordsToStorage(records);
+        alert(`✓ 学生“${recordData.name}” 评分已暂存 (当前共${records.length}条)`);
+        return true;
+    }
+
+    // 删除单条记录
+    function deleteRecordById(recordId) {
+        let records = getAllRecords();
+        const newRecords = records.filter(r => r.id !== recordId);
+        if (newRecords.length === records.length) return false;
+        saveRecordsToStorage(newRecords);
+        // 如果删除时正好在编辑这条记录，取消编辑模式
+        if (currentEditId === recordId) {
+            currentEditId = null;
+            toggleEditMode(false);
+            clearForm();
+        }
+        return true;
+    }
+
+    // 清空所有记录
+    function clearAllRecords() {
+        if (confirm("⚠️ 确认清空所有暂存的学生评分记录吗？数据将不可恢复。")) {
+            localStorage.removeItem(STORAGE_KEY);
+            currentEditId = null;
+            toggleEditMode(false);
+            renderRecordsList();
+            updateRecordCount();
+            clearForm();
+            alert("所有暂存数据已清空");
+        }
+    }
+
+    // 更新右侧列表显示
+    function renderRecordsList() {
+        const records = getAllRecords();
+        const container = document.getElementById('recordsList');
+        const countSpan = document.getElementById('recordCount');
+        if (!container) return;
+        if (records.length === 0) {
+            container.innerHTML = '<div class="empty-records">✨ 暂无暂存数据，评分后点击“暂存当前记录”</div>';
+            if(countSpan) countSpan.innerText = '0 条';
+            return;
+        }
+        countSpan.innerText = records.length + ' 条';
+        let html = '';
+        records.forEach(rec => {
+            // 总分
+            const totalScore = rec.total || (rec.scores ? rec.scores.reduce((a,b)=>a+b,0) : 0);
+            html += `
+                <div class="record-item" data-id="${rec.id}">
+                    <div class="record-info">
+                        <div>
+                            <span class="record-name">${escapeHtml(rec.name)}</span>
+                            <span class="record-id"> (${escapeHtml(rec.studentId)})</span>
+                            ${currentEditId === rec.id ? '<span class="badge-edit">✏️ 编辑中</span>' : ''}
+                        </div>
+                        <div class="record-total">总分: ${totalScore}</div>
+                        <div class="record-actions">
+                            <button class="edit-record-btn" data-id="${rec.id}">✏️ 编辑</button>
+                            <button class="delete-record-btn" data-id="${rec.id}">🗑️ 删除</button>
+                        </div>
+                    </div>
+                    <div style="font-size:12px; color:#4b6a8b; margin-top:6px;">暂存时间: ${new Date(rec.createdAt).toLocaleString()}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        // 绑定编辑删除事件 (动态)
+        document.querySelectorAll('.edit-record-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = btn.getAttribute('data-id');
+                loadRecordToForm(id);
+            });
+        });
+        document.querySelectorAll('.delete-record-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = btn.getAttribute('data-id');
+                if (confirm("确定删除该学生的评分记录吗？")) {
+                    deleteRecordById(id);
+                }
+            });
+        });
+    }
+
+    // 加载记录到表单进行编辑
+    function loadRecordToForm(recordId) {
+        const records = getAllRecords();
+        const record = records.find(r => r.id === recordId);
+        if (!record) { alert("记录不存在"); return; }
+        // 填充学生基本信息
+        document.getElementById('studentName').value = record.name;
+        document.getElementById('studentID').value = record.studentId;
+        // 填充评分
+        if (record.scores && record.scores.length === scoreItems.length) {
+            populateScoresToForm(record.scores);
+        } else {
+            // 兼容旧数据或者出错
+            alert("评分数据不完整，已重置表单，请重新评分");
+            clearFormScoresOnly();
+        }
+        updateTotalDisplay();
+        currentEditId = record.id;
+        toggleEditMode(true);
+        // 滚动到上方提示
+        document.querySelector('.left-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        alert(`正在编辑: ${record.name}，修改评分后点击“💾 暂存当前记录”将覆盖原记录。`);
+    }
+
+    // 编辑模式切换UI
+    function toggleEditMode(isEditing) {
+        const saveBtn = document.getElementById('saveRecordBtn');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        if (isEditing) {
+            saveBtn.innerHTML = '✏️ 更新记录';
+            saveBtn.classList.add('btn-warning');
+            cancelBtn.style.display = 'inline-block';
+        } else {
+            saveBtn.innerHTML = '💾 暂存当前记录';
+            saveBtn.classList.remove('btn-warning');
+            cancelBtn.style.display = 'none';
+            currentEditId = null;
+        }
+    }
+
+    // 取消编辑模式
+    function cancelEdit() {
+        currentEditId = null;
+        toggleEditMode(false);
+        clearForm();        // 清空表单并重置
+        alert("已退出编辑模式，表单已重置");
+    }
+
+    // 清空整个表单(姓名学号+分数)
+    function clearForm() {
+        document.getElementById('studentName').value = '';
+        document.getElementById('studentID').value = '';
+        clearFormScoresOnly();
+        updateTotalDisplay();
+    }
+
+    function clearFormScoresOnly() {
+        const inputs = document.querySelectorAll('#scoreTableBody .score-input');
+        inputs.forEach(inp => inp.value = '');
+        updateTotalDisplay();
+    }
+
+    // 保存当前表单到暂存区 (新增或更新)
+    function saveCurrentFormToStorage() {
+        if (!validateFormComplete()) return false;
+        const name = document.getElementById('studentName').value.trim();
+        const studentId = document.getElementById('studentID').value.trim();
+        let scoresArray = collectScoresFromForm();
+        // 验证分数数组合法性
+        let valid = true;
+        scoresArray.forEach((val, idx) => {
+            const maxV = scoreItems[idx].max;
+            if (val < 0 || val > maxV) valid = false;
+        });
+        if (!valid) { alert("评分项有超出范围的值，请修正"); return false; }
+        const total = scoresArray.reduce((s,v)=>s+v,0);
+        // 构建记录对象
+        const recordData = {
+            name: name,
+            studentId: studentId,
+            scores: scoresArray,
+            total: total,
+            // 附加元数据便于导出
+            itemsMeta: scoreItems.map(item => ({ name: item.name.replace(/<.*?>/g, '').trim(), max: item.max }))
+        };
+        const success = upsertRecord(recordData);
+        if (success) {
+            // 保存后清空表单 (除非编辑模式已更新，编辑模式下也要清空形式，让用户继续录下一个)
+            if (!currentEditId) {
+                clearForm();
+            } else {
+                // 更新完成后，退出编辑模式并且清空表单，方便录入下一位
+                currentEditId = null;
+                toggleEditMode(false);
+                clearForm();
+            }
+            // 重新渲染列表（已经包含在upsertRecord里的render）
+        }
+        return true;
+    }
+
+    // ---------- 导出全部记录为CSV (Excel可打开) ----------
+    function exportAllToCSV() {
+        const records = getAllRecords();
+        if (records.length === 0) {
+            alert("暂无任何暂存记录，请先评分并暂存学生数据。");
+            return;
+        }
+        // 构建CSV列标题: 姓名, 学号, 总分, 然后每个评分项名称（清理html标签）
+        const scoreHeaders = scoreItems.map((item, idx) => {
+            let rawName = item.name.replace(/<.*?>/g, '').replace(/\n/g, ' ').trim();
+            // 缩短过长但保留关键
+            if (rawName.length > 35) rawName = rawName.substr(0, 32) + '…';
+            return `${rawName} (${item.max}分)`;
+        });
+        const headers = ['学生姓名', '学号/工号', '总分', ...scoreHeaders, '暂存时间'];
+        
+        // 构建每一行数据
+        const rows = [];
+        for (const rec of records) {
+            const scoresArr = rec.scores && rec.scores.length === scoreItems.length ? rec.scores : new Array(scoreItems.length).fill(0);
+            const total = rec.total !== undefined ? rec.total : scoresArr.reduce((a,b)=>a+b,0);
+            const createTime = rec.createdAt ? new Date(rec.createdAt).toLocaleString() : '';
+            const rowData = [
+                rec.name,
+                rec.studentId,
+                total,
+                ...scoresArr,
+                createTime
+            ];
+            rows.push(rowData);
+        }
+        // 生成CSV内容，加入BOM解决中文乱码
+        let csvContent = "\uFEFF";
+        csvContent += headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(',') + "\n";
+        for (const row of rows) {
+            const escapedRow = row.map(cell => {
+                if (cell === undefined || cell === null) cell = '';
+                const str = String(cell);
+                return `"${str.replace(/"/g, '""')}"`;
+            }).join(',');
+            csvContent += escapedRow + "\n";
+        }
+        // 下载文件
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        const now = new Date();
+        const fileName = `气管插管评分汇总_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}_${now.getHours()}-${now.getMinutes()}.csv`;
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        alert(`✅ 成功导出 ${records.length} 条学生评分记录到文件: ${fileName}`);
+    }
+
+    // 辅助函数
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    function updateRecordCount() {
+        const records = getAllRecords();
+        const countSpan = document.getElementById('recordCount');
+        if (countSpan) countSpan.innerText = records.length + ' 条';
+        if(records.length === 0 && document.getElementById('recordsList').innerHTML.includes('暂无暂存数据')===false){
+            renderRecordsList();
+        }
+    }
+
+    // 绑定事件及自动计算总分联动
+    function bindEvents() {
+        document.getElementById('calculateBtn').addEventListener('click', () => {
+            const total = updateTotalDisplay();
+            alert(`当前评分总分: ${total} / ${scoreItems.reduce((s,i)=>s+i.max,0)}`);
+        });
+        document.getElementById('saveRecordBtn').addEventListener('click', saveCurrentFormToStorage);
+        document.getElementById('clearFormBtn').addEventListener('click', () => {
+            if(confirm("清空当前表单所有填写内容？")){
+                clearForm();
+                if(currentEditId) {
+                    currentEditId = null;
+                    toggleEditMode(false);
+                }
+            }
+        });
+        document.getElementById('exportAllBtn').addEventListener('click', exportAllToCSV);
+        document.getElementById('clearAllBtn').addEventListener('click', clearAllRecords);
+        document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
+        // 监听评分输入自动计算总分
+        const container = document.getElementById('scoreTableBody');
+        container.addEventListener('input', (e) => {
+            if(e.target && e.target.classList && e.target.classList.contains('score-input')) {
+                // 约束最大值最小值
+                let val = parseInt(e.target.value);
+                if(isNaN(val)) val = 0;
+                const maxVal = parseInt(e.target.getAttribute('data-max'));
+                if(val > maxVal) e.target.value = maxVal;
+                if(val < 0) e.target.value = 0;
+                updateTotalDisplay();
+            }
+        });
+    }
+
+    // 初始化页面
+    function init() {
+        renderScoreTable();
+        bindEvents();
+        renderRecordsList();     // 加载已有暂存数据
+        updateTotalDisplay();
+    }
+    init();
+</script>
+</body>
+</html>
